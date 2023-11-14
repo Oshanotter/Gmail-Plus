@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name Gmail iframe test
+// @name Gmail Plus
 // @description A userscript that adds user profile images to your inbox emails on Gmail.
-// @version 1.1.0
+// @version 2.0.0
 // @icon https://repository-images.githubusercontent.com/714702785/a02d79a1-227a-4179-9722-1c6f1610947e
 // @updateURL https://raw.githubusercontent.com/Oshanotter/Gmail-Plus/main/Gmail-Plus.user.js
 // @namespace Oshanotter
@@ -10,6 +10,9 @@
 // @include https://contacts.google.com/widget/companion*
 // @run-at document-end
 // ==/UserScript==
+
+// default google user icon
+// https://lh3.googleusercontent.com/a/default-user
 
 function main(){
   // check to see if this code is running on the main page
@@ -27,6 +30,9 @@ function main(){
         eMails = table.querySelectorAll("tr")
         // load the profile images from the cookies
         setProfileImages()
+        // start observing for when new emails enter the inbox
+        length = eMails.length
+        setInterval(scanForNewEmails, 1000)
         // check for cookie to see if it has any value, if it doesn't, call the welcomeFunction()
         var dictionary = getCookie()
         if (dictionary ==  null || Object.keys(dictionary).length === 0){
@@ -146,6 +152,8 @@ function getCookie() {
 
 function setProfileImages(){
   var dict = getCookie()
+  var table = document.querySelector('.F.cf.zt');
+  var eMails = table.querySelectorAll("tr")
   // load the images from the cookie
   for (var i = eMails.length - 1; i >= 0; i--){
     console.log(i)
@@ -230,6 +238,89 @@ function detectRemovalListener(email){
   observer.observe(targetElement, config);
 
 }
+
+function scanForNewEmails(){
+  var table = document.querySelector('.F.cf.zt');
+  var eMails = table.querySelectorAll("tr")
+
+  if (eMails.length > length){
+    console.log("new email...")
+    var newMail = eMails[0]
+    var title = getTextAndEmojis(newMail.querySelector('.bog').firstChild)
+    console.log("title: " + title)
+    var body = getTextAndEmojis(newMail.querySelector('.y2'))
+    console.log("body: " + body)
+    var sender = newMail.querySelector('.bA4').firstElementChild
+    var name = getTextAndEmojis(sender)
+    console.log("name: " + name)
+    var address = sender.getAttribute('email')
+    console.log("address: " + address)
+    // send a notification with the new email's data
+    sendNotification(title, body, name, address)
+    // put the profile images back on the emails because they were removed when the new email was received
+    setProfileImages()
+  }else{
+    console.log("no new emails...")
+  }
+
+  length = eMails.length
+}
+
+function sendNotification(title, body, name, address){
+  // takes the title and body of the email as well as the sender's name and email address as input and sends a notification to the desktop
+  console.log("sending notification...")
+  var updatedBody = body.replace(" - ", "")
+
+  var dict = getCookie()
+  if (dict == null){
+    var image = "https://i.imgur.com/LeHM0zA.png"
+  }else{
+    var image = dict[address]
+    if (image == undefined){
+      var image = "https://i.imgur.com/LeHM0zA.png"
+    }
+  }
+  var options = {
+          body: title + "\n" + updatedBody,
+          icon: image
+        };
+
+  // send the notification
+  var notification = new Notification(name, options);
+  notification.addEventListener('click', function () {
+    // Open the url to the email page. (Can't do this at this moment, cannot find the url of individual emails)
+    //window.open('https://example.com', '_blank');
+    // Instead, focus on the window where the notification came from, and click on the email to open it
+    window.focus()
+    notification.close();  // Close the notification after opening the URL
+    console.log("clicked on notification...")
+    setProfileImages();
+    // find a way to click on the email
+    theEmail.click()
+  });
+
+  var sound = new Audio("https://vgmsite.com/soundtracks/pokemon-black-and-white/arvfrage/129%20Received%20an%20Item%21.mp3")
+  // play the notification sound when a new email is detected
+  // try check to see if do not disturb is on first!
+  sound.play()
+}
+
+function getTextAndEmojis(element) {
+    var result = '';
+    // Iterate through child nodes
+    element.childNodes.forEach(function (node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            // Text node (including text content and emojis)
+            result += node.textContent;
+        } else if (node.nodeType === Node.ELEMENT_NODE && node.nodeName === 'IMG') {
+            // Image node (emoji)
+            var emojiAlt = node.alt;
+            result += emojiAlt;
+        }
+    });
+    return result;
+}
+
 
 
 function embeddedPageFunction(){
@@ -334,3 +425,4 @@ function embeddedPageFunction(){
 
 
 main()
+
