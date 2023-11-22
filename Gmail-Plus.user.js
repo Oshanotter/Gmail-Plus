@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Gmail Plus
-// @description A userscript that adds user profile images to your inbox emails on Gmail.
-// @version 2.0.0
+// @description A userscript that adds user profile images to your inbox emails on Gmail. Additionally, it will send desltop notifications when a new email is received.
+// @version 2.1.3
 // @icon https://repository-images.githubusercontent.com/714702785/a02d79a1-227a-4179-9722-1c6f1610947e
 // @updateURL https://raw.githubusercontent.com/Oshanotter/Gmail-Plus/main/Gmail-Plus.user.js
 // @namespace Oshanotter
@@ -11,8 +11,20 @@
 // @run-at document-end
 // ==/UserScript==
 
-// default google user icon
-// https://lh3.googleusercontent.com/a/default-user
+preferences = {
+  // below is the url for the default profile image for users who do not have an image set
+  "defaultImg" : "https://lh3.googleusercontent.com/a/default-user",
+
+  // below is the url to the default sound that notifications will make when an email is received
+  "defaultSound" : "https://ssl.gstatic.com/chat/sounds/hub_chat_notification_sunrise-973b53e821dc8ec76587980d63d7d6c1.mp3",
+
+  // below is the option to send notifications or not. true means notifications will be sent and false means notifications will not be sent
+  "sendNotifications" : true,
+
+  // below is the option to play a sound (the default sound above) when a notification is sent. true means a sound will play and false means it will not
+  "playSound" : true
+}
+
 
 function main(){
   // check to see if this code is running on the main page
@@ -28,20 +40,24 @@ function main(){
       try{
         table = document.querySelector('.F.cf.zt');
         eMails = table.querySelectorAll("tr")
+        // tell the alreadyNotified list that all of the current emails have already sent a notification
+        alreadyNotified = Array.from(eMails).map(element => element.id);
         // load the profile images from the cookies
         setProfileImages()
         // start observing for when new emails enter the inbox
-        length = eMails.length
+        length = parseInt(document.querySelectorAll(".ts")[2].innerText)
         setInterval(scanForNewEmails, 1000)
+        // add an event listener to see if the url changes, then try to set profile images again or get profile images from an email
+        window.addEventListener('popstate', urlChange);
         // check for cookie to see if it has any value, if it doesn't, call the welcomeFunction()
         var dictionary = getCookie()
         if (dictionary ==  null || Object.keys(dictionary).length === 0){
           // if the cookie does not exist, send a prompt to open up the contacts sidebar
           // this will typically only appear for users the first time this script is used
-          //welcomeFunction()
+          welcomeFunction()
         }
       }catch{
-        console.log("couldn't find emails in inbox, trying again...")
+        //console.log("couldn't find emails in inbox, trying again...")
         setTimeout(findInbox, 1000)
       }
     }
@@ -85,9 +101,7 @@ function receiveDictionary(event){
   if (event.origin.includes("https://contacts.google.com") && event.data.includes("contactsDictionary=")){
     var dictAsString = event.data.replace("contactsDictionary=", '')
     var dict = JSON.parse(decodeURIComponent(dictAsString))
-    console.log("successfully received dictionary...")
-    // maybe change this to updateCookie()
-    //setCookie(dict)
+    //console.log("successfully received dictionary...")
     updateCookie(dict)
     setProfileImages()
   }
@@ -99,7 +113,7 @@ function setCookie(dict) {
   expireCookies()
   // convert the dictionary to a string to set it to a cookie
   var dictAsString = encodeURIComponent(JSON.stringify(dict));
-  console.log(dictAsString)
+  //console.log(dictAsString)
   var totalLength = dictAsString.length
   if (totalLength > 4000){
     var myIndex = 1
@@ -108,15 +122,15 @@ function setCookie(dict) {
       var partString = dictAsString.substring(i, i + 4000)
       var cookieValue = "ProfileImagesDictionary" + myIndex + "=" + partString
       var myIndex = myIndex + 1
-      console.log("cookie value for index: " + i)
-      console.log(cookieValue)
+      //console.log("cookie value for index: " + i)
+      //console.log(cookieValue)
       document.cookie = cookieValue
     }
   }else{
     document.cookie = "ProfileImagesDictionary1=" + dictAsString
   }
-  console.log("successfully set cookie...")
-  console.log(dict)
+  //console.log("successfully set cookie...")
+  //console.log(dict)
 }
 
 function getCookie() {
@@ -126,48 +140,47 @@ function getCookie() {
   for (let i = 0; i < cookieArray.length; i++) {
       let cookie = cookieArray[i];
       if (cookie.includes("ProfileImagesDictionary")) {
-        console.log(cookie)
+        //console.log(cookie)
         list.push(cookie)
       }
   }
   if (list.length == 0){
     return null;
   }else{
-    console.log("here is the list: ")
-    console.log(list)
     // sort the list
     list.sort();
-    console.log(list)
     // convert the list into a string
     var listAsString = list.join("");
     var returnString = listAsString.replace(/ProfileImagesDictionary\d+=/g, "")
     var returnString = returnString.replace(/\s/g, "");
-    console.log("there must be a problem with the return value")
-    console.log(returnString)
+    //console.log(returnString)
     var returnValue = JSON.parse(decodeURIComponent(returnString));
-    console.log("never mind, it successfully returned the value")
     return returnValue
   }
 }
 
 function setProfileImages(){
   var dict = getCookie()
-  var table = document.querySelector('.F.cf.zt');
+  var currentElement = document.querySelector('.bGI.nH.oy8Mbf.S4:not([style*="display: none"])');
+  var table = currentElement.querySelector('.F.cf.zt');
   var eMails = table.querySelectorAll("tr")
   // load the images from the cookie
   for (var i = eMails.length - 1; i >= 0; i--){
-    console.log(i)
+    //console.log(i)
     var mail = eMails[i]
-    console.log(mail)
+    //console.log(mail)
     var sender = mail.querySelector('.bA4').firstElementChild
     var address = sender.getAttribute('email')
-    console.log(address)
-    var link = dict[address]
-    if (link == undefined){
-      var link = "https://i.imgur.com/LeHM0zA.png"
+    //console.log(address)
+    if (dict == null){
+      var link = preferences["defaultImg"] //"https://i.imgur.com/LeHM0zA.png"
+    }else{
+      var link = dict[address]
+      if (link == undefined){
+        var link = preferences["defaultImg"] //"https://i.imgur.com/LeHM0zA.png"
+      }
     }
-    console.log(link)
-    //var link = "https://static.vecteezy.com/system/resources/previews/018/765/757/original/user-profile-icon-in-flat-style-member-avatar-illustration-on-isolated-background-human-permission-sign-business-concept-vector.jpg"
+    //console.log(link)
 
     var profileImageElement = document.createElement("img");
     profileImageElement.src = link
@@ -187,13 +200,13 @@ function setProfileImages(){
 
 function updateCookie(dict){
   var currentCookie = getCookie()
-  console.log("current dict: ")
-  console.log(currentCookie)
-  console.log("new dict: ")
-  console.log(dict)
+  //console.log("current dict: ")
+  //console.log(currentCookie)
+  //console.log("new dict: ")
+  //console.log(dict)
   var mergedDict = { ...currentCookie, ...dict }
-  console.log("merged dict: ")
-  console.log(mergedDict)
+  //console.log("merged dict: ")
+  //console.log(mergedDict)
   setCookie(mergedDict)
 }
 
@@ -224,7 +237,7 @@ function detectRemovalListener(email){
               // Check if the removed nodes include the specific element you're interested in
               if (Array.from(mutation.removedNodes).includes(elementToRemove)) {
                   // The element has been removed from the parent element
-                  console.log("profile image removed, replacing it...");
+                  //console.log("profile image removed, replacing it...");
                   setProfileImages()
               }
           }
@@ -242,42 +255,51 @@ function detectRemovalListener(email){
 function scanForNewEmails(){
   var table = document.querySelector('.F.cf.zt');
   var eMails = table.querySelectorAll("tr")
+  var newLength = parseInt(document.querySelectorAll(".ts")[2].innerText)
 
-  if (eMails.length > length){
-    console.log("new email...")
+  if (newLength > length){
+    //console.log("new email...")
     var newMail = eMails[0]
     var title = getTextAndEmojis(newMail.querySelector('.bog').firstChild)
-    console.log("title: " + title)
+    //console.log("title: " + title)
     var body = getTextAndEmojis(newMail.querySelector('.y2'))
-    console.log("body: " + body)
+    //console.log("body: " + body)
     var sender = newMail.querySelector('.bA4').firstElementChild
     var name = getTextAndEmojis(sender)
-    console.log("name: " + name)
+    //console.log("name: " + name)
     var address = sender.getAttribute('email')
-    console.log("address: " + address)
-    // send a notification with the new email's data
-    sendNotification(title, body, name, address)
+    //console.log("address: " + address)
+    if (!alreadyNotified.includes(newMail.id) && newMail.className.includes("zE")){
+      // if a notification has not already been sent from this email AND the email is unread...
+      // send a notification with the new email's data
+      sendNotification(title, body, name, address)
+      // add the id to the alreadyNotified list
+      alreadyNotified.push(newMail.id)
+    }
     // put the profile images back on the emails because they were removed when the new email was received
     setProfileImages()
   }else{
-    console.log("no new emails...")
+    //console.log("no new emails...")
   }
-
-  length = eMails.length
+  length = newLength
 }
 
 function sendNotification(title, body, name, address){
   // takes the title and body of the email as well as the sender's name and email address as input and sends a notification to the desktop
-  console.log("sending notification...")
+  if (preferences["sendNotifications"] == false){
+    // don't send the notification
+    return
+  }
+  //console.log("sending notification...")
   var updatedBody = body.replace(" - ", "")
 
   var dict = getCookie()
   if (dict == null){
-    var image = "https://i.imgur.com/LeHM0zA.png"
+    var image = preferences["defaultImg"] //"https://i.imgur.com/LeHM0zA.png"
   }else{
     var image = dict[address]
     if (image == undefined){
-      var image = "https://i.imgur.com/LeHM0zA.png"
+      var image = preferences["defaultImg"] //"https://i.imgur.com/LeHM0zA.png"
     }
   }
   var options = {
@@ -293,16 +315,17 @@ function sendNotification(title, body, name, address){
     // Instead, focus on the window where the notification came from, and click on the email to open it
     window.focus()
     notification.close();  // Close the notification after opening the URL
-    console.log("clicked on notification...")
+    //console.log("clicked on notification...")
     setProfileImages();
     // find a way to click on the email
-    theEmail.click()
+    clickOnEmail(title, updatedBody, name, address)
   });
 
-  var sound = new Audio("https://vgmsite.com/soundtracks/pokemon-black-and-white/arvfrage/129%20Received%20an%20Item%21.mp3")
-  // play the notification sound when a new email is detected
-  // try check to see if do not disturb is on first!
-  sound.play()
+  if (preferences["playSound"] == true){
+    var sound = new Audio(preferences["defaultSound"])
+    // play the notification sound when a new email is detected
+    sound.play()
+  }
 }
 
 function getTextAndEmojis(element) {
@@ -321,6 +344,112 @@ function getTextAndEmojis(element) {
     return result;
 }
 
+function clickOnEmail(title, body, name, address){
+  // finds the specific email and clicks on it
+  var table = document.querySelector('.F.cf.zt');
+  var eMails = table.querySelectorAll("tr")
+  for (var i = 0; i < eMails.length; i++){
+    var email = eMails[i]
+    var rTitle = getTextAndEmojis(email.querySelector('.bog').firstChild)
+    var rBody = getTextAndEmojis(email.querySelector('.y2'))
+    var sender = email.querySelector('.bA4').firstElementChild
+    var rName = getTextAndEmojis(sender)
+    var rAddress = sender.getAttribute('email')
+    var isTitle = rTitle == title
+    var isBody = rBody.includes(body)
+    var isName = rName == name
+    var isAddress = rAddress == address
+    // if the email contains the correct title, body, name, and address, click on it and exit the function
+    if (isTitle && isBody && isName && isAddress){
+      email.click()
+      return
+    }
+  }
+}
+
+function urlChange(){
+  // this function will be run every time the url of the page changes
+  //console.log("url of the page changed...")
+  var url = window.location.href
+  if (url.includes("#inbox/")){
+    //console.log("get the image from the sender of the email...")
+    getImgFromEmail(0)
+  }else if (!url.includes("#inbox")){
+    //console.log("add profile images to the emails...")
+    var currentElement = document.querySelector('.bGI.nH.oy8Mbf.S4:not([style*="display: none"])');
+    var table = currentElement.querySelector('.F.cf.zt');
+    var eMails = table.querySelectorAll("tr")
+    setProfileImages()
+  }
+}
+
+function getImgFromEmail(num){
+  // this function will obtain the profile image from individual emails
+  if (num == 5){
+    return
+  }
+  try{
+    var img = document.querySelector('.aCi').children[1]
+    var src = img.src
+    var url = src.split('=')[0]
+    if (url.includes("ssl.gstatic")){
+      setTimeout(function() {
+        getImgFromEmail(num + 1);
+      }, 1000);
+      return
+    }else if (url.includes("https://lh3.googleusercontent.com/a/default-user")){
+      return
+    }
+    var address = document.querySelector('.iw').firstChild.firstChild.dataset.hovercardId
+    var dict = {}
+    dict[address] = url
+    updateCookie(dict)
+  }catch{
+    setTimeout(function() {
+      getImgFromEmail(num + 1);
+    }, 1000);
+  }
+}
+
+function welcomeFunction() {
+  // Create a container div for the popup
+  const popupContainer = document.createElement('div');
+  popupContainer.style.position = 'fixed';
+  popupContainer.style.top = '50%';
+  popupContainer.style.left = '50%';
+  popupContainer.style.transform = 'translate(-50%, -50%)';
+  popupContainer.style.backgroundColor = '#fff';
+  popupContainer.style.padding = '20px';
+  popupContainer.style.border = '2px solid #ccc';
+  popupContainer.style.borderRadius = '8px';
+  popupContainer.style.zIndex = '9999';
+
+  // Create a paragraph for the message
+  const messageParagraph = document.createElement('p');
+  messageParagraph.textContent = "Welcome to Gmail Plus!\n\nYou are probably seeing generic profile images for your contacts right now. Don't worry! Clicking on the 'Contacts' button on the side panel to the right should fix this. \n\nAfter clicking on it, it will go through your contacts to get their profile images. You only have to do this once; every other time you come to this page, you will not have to open this side panel. In addition, your contact photos will update automatically as you add more or change old ones. \n\nThanks for using my Userscript!";
+  messageParagraph.style.whiteSpace = 'pre-line';
+  popupContainer.appendChild(messageParagraph);
+
+  // Create a "Got It!" button
+  const gotItButton = document.createElement('button');
+  gotItButton.textContent = 'Got It!';
+  gotItButton.style.marginTop = '15px';
+  gotItButton.style.padding = '8px 16px';
+  gotItButton.style.backgroundColor = '#008bff';
+  gotItButton.style.color = '#fff';
+  gotItButton.style.border = 'none';
+  gotItButton.style.borderRadius = '4px';
+  gotItButton.style.cursor = 'pointer';
+  gotItButton.addEventListener('click', () => {
+    // Close the popup when the button is clicked
+    document.body.removeChild(popupContainer);
+  });
+  popupContainer.appendChild(gotItButton);
+
+  // Append the popup container to the body
+  document.body.appendChild(popupContainer);
+}
+
 
 
 function embeddedPageFunction(){
@@ -329,7 +458,7 @@ function embeddedPageFunction(){
   if (embeddedPageUrl.includes('https://contacts.google.com/widget/companion')){
     // initialize the dictionary that will be sent to the main page
     var dictionary = {}
-    console.log("initiating the embedded page functiion...")
+    //console.log("initiating the embedded page functiion...")
 
     // find all of the contacts and loop through them to find all of their emails and their profile image
     function findAllContacts(index){
@@ -338,7 +467,7 @@ function embeddedPageFunction(){
         if (allContacts.length == 0){
           // continue checking for contacts until they appear when the page is fully loaded
           var interval = setInterval(function(){
-            console.log("looking for contacts")
+            //console.log("looking for contacts")
             allContacts = document.getElementsByClassName("XXcuqd");
             if (allContacts.length > 0){
               clearInterval(interval)
@@ -350,8 +479,8 @@ function embeddedPageFunction(){
               }
               profileImageUrl = allContacts[index].getElementsByTagName("img")[0].src
               // now loop through the contacts
-              console.log("found all contacts: ")
-              console.log(allContacts)
+              //console.log("found all contacts: ")
+              //console.log(allContacts)
               loopThroughContacts(index)
             }
           }, 1000);
@@ -360,12 +489,12 @@ function embeddedPageFunction(){
 
     async function loopThroughContacts(index){
       // this clicks on the contact at the specified index, then calls the findAllEmails() function and waits for it to finish before continuing
-      console.log(index)
-      console.log(allContacts.length)
+      //console.log(index)
+      //console.log(allContacts.length)
       if (index < allContacts.length){
         // click on each contact to open a new page and recieve all of the emails
         allContacts[index].firstChild.childNodes[1].firstChild.click()
-        console.log("clicked on the contact")
+        //console.log("clicked on the contact")
         // wait for findAllEmails() to complete before moving on
         await findAllEmails()
         // find all of the contacts again because they were removed when clicking on one of the contacts
@@ -384,18 +513,17 @@ function embeddedPageFunction(){
             allEmails = document.getElementsByClassName("urwqv");
             if (allEmails.length > 0){
               clearInterval(interval)
-              console.log(allEmails)
+              //console.log(allEmails)
               // get all of the emails' inner text
               for (var i = 0; i < allEmails.length; i++){
                   var email = allEmails[i].innerText.split("\n")[0]
-                  console.log(email)
+                  //console.log(email)
                   if (email != "Add birthday" && email != "Add phone number"){
                     // add the email to the dictionary with the profile image url
                     dictionary[email] = profileImageUrl.split("=")[0] // .split("=")[0] makes the url point to a full resolution image
-                    // "https://i.imgur.com/LeHM0zA.png" is the default
                   }
                 }
-              console.log(dictionary)
+              //console.log(dictionary)
               // go back to the main page
               document.querySelector('button[aria-label="Back"]').click()
               resolve();
@@ -410,12 +538,12 @@ function embeddedPageFunction(){
 
     function sendDictionary(){
       // this is what happens when there are no more contacts to loop through
-      console.log("there are no more contacts")
+      //console.log("there are no more contacts")
       // convert the dictionay to a string
       var dictAsString = encodeURIComponent(JSON.stringify(dictionary))
       // send a message with the dictionary to the main webpage
       window.parent.postMessage("contactsDictionary=" + dictAsString, 'https://mail.google.com/mail/u/0/#inbox');
-      console.log("sent message to main page...")
+      //console.log("sent message to main page...")
     }
 
 
@@ -425,4 +553,3 @@ function embeddedPageFunction(){
 
 
 main()
-
