@@ -2,7 +2,7 @@
 
 <img align="left" height="65vw" src="https://repository-images.githubusercontent.com/714702785/a02d79a1-227a-4179-9722-1c6f1610947e">
 
-A userscript that adds user profile images to your inbox emails on Gmail. Additionally, it will send desltop notifications when a new email is received. You can install the userscript by clicking this [Install Link](https://raw.githubusercontent.com/Oshanotter/Gmail-Plus/main/Gmail-Plus.user.js).
+A userscript that adds user profile images to your inbox emails on Gmail. Additionally, it will send desktop notifications when a new email is received. You can install the userscript by clicking this [Install Link](https://raw.githubusercontent.com/Oshanotter/Gmail-Plus/main/Gmail-Plus.user.js).
 
 </br>
 
@@ -17,6 +17,7 @@ A userscript that adds user profile images to your inbox emails on Gmail. Additi
 - [Installation](#installation)
 - [Usage](#usage)
 - [License](#license)
+- [Images](#images)
 
 ## Features
 
@@ -50,3 +51,14 @@ Updates happen automatically, but if you encounter an issue, [report a new issue
 
 This project is licensed under the MIT License - meaning that you are free to use, distribute, and edit this project however you see fit!  
 See the [LICENSE](./LICENSE) file for more details.
+
+## Images
+
+<p align="left">
+  <img src="https://i.imgur.com/Sokt6Nf.png" width="400vw" />
+  <strong>Profile Images appear on the emails</strong>
+  <br>
+  <br>
+  <img src="https://i.imgur.com/fQLg4md.png" width="400vw" /> 
+  <strong>A desktop notification pops up in the top right corner</strong>
+</p>
