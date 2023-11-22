@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Gmail Plus
-// @description A userscript that adds user profile images to your inbox emails on Gmail. Additionally, it will send desltop notifications when a new email is received.
+// @description A userscript that adds user profile images to your inbox emails on Gmail. Additionally, it will send desktop notifications when a new email is received.
 // @version 2.1.3
 // @icon https://repository-images.githubusercontent.com/714702785/a02d79a1-227a-4179-9722-1c6f1610947e
 // @updateURL https://raw.githubusercontent.com/Oshanotter/Gmail-Plus/main/Gmail-Plus.user.js
