@@ -10,7 +10,7 @@ A userscript that adds user profile images to your inbox emails on Gmail. Additi
 > This currently has only been tested using the Violentmonkey extension for Google Chrome.
 
 > [!IMPORTANT]  
-> Follow the directions in the pop-up that appears in Gmail after installing this script. It may take a few minutes and a few reloads for this Userscript to properly work.
+> Follow the directions in the pop-up that appears in Gmail after installing this script. You will need to create your own Google Apps Script for the userscript to work. Don't worry, it's completely free.
 ## Table of Contents
 
 - [Features](#features)
@@ -45,7 +45,7 @@ If you have any trouble installing the scripts, refer to the respective Userscri
 ## Usage
 
 Using the script is simple! After it is installed, just forget about it and your Userscript Engine will do the rest!
-Updates happen automatically, but if you encounter an issue, [report a new issue](../../issues) under this repository, if it hasn't already been reported. 
+Updates happen automatically, but if you encounter an issue, [report a new issue](../../issues) under this repository, if it hasn't already been reported.
 
 ## License
 
@@ -59,6 +59,6 @@ See the [LICENSE](./LICENSE) file for more details.
   <strong>Profile Images appear on the emails</strong>
   <br>
   <br>
-  <img src="https://i.imgur.com/fQLg4md.png" width="400vw" /> 
+  <img src="https://i.imgur.com/fQLg4md.png" width="400vw" />
   <strong>A desktop notification pops up in the top right corner</strong>
 </p>
