@@ -10,7 +10,10 @@
 // @run-at document-end
 // ==/UserScript==
 
-preferences = {
+let alreadyNotified;
+let length;
+
+let preferences = {
   // below is the url for the default profile image for users who do not have an image set
   "defaultImg": "https://lh3.googleusercontent.com/a/default-user",
 
@@ -125,8 +128,8 @@ function welcomeFunction() {
 function findInbox() {
   // try to find the emails in the inbox
   try {
-    table = document.querySelector('.F.cf.zt');
-    eMails = table.querySelectorAll("tr");
+    let table = document.querySelector('.F.cf.zt');
+    let eMails = table.querySelectorAll("tr");
     // tell the alreadyNotified list that all of the current emails have already sent a notification
     alreadyNotified = Array.from(eMails).map(element => element.id);
     // load the profile images from the local storage
@@ -283,7 +286,7 @@ function scanForNewEmails() {
 function urlChange() {
   // this function will be run every time the url of the page changes
   //console.log("url of the page changed...");
-  if (!url.includes("#inbox")) {
+  if (!document.location.href.includes("#inbox")) {
     //console.log("add profile images to the emails...");
     var currentElement = document.querySelector('.bGI.nH.oy8Mbf.S4:not([style*="display: none"])');
     var table = currentElement.querySelector('.F.cf.zt');
